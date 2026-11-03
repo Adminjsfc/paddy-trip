@@ -1,0 +1,116 @@
+{
+  "build": "2026-10-02-influx-gps-utc-index-fix",
+  "engine": "InfluxDB OSS 2.9.1 local native Flux",
+  "production_access": false,
+  "mysql": "simulated",
+  "redis": "in-memory fixture for native test; separate Redis/Lua simulations also run",
+  "passed": 7,
+  "failed": 0,
+  "results": [
+    {
+      "name": "mixed_index_full_pages_cursor_restart_and_production_sample_exclusion",
+      "passed": true,
+      "input_records": 215,
+      "matched": 204,
+      "page_counts": [
+        200,
+        4
+      ],
+      "sample_excluded": true,
+      "first_gps_utc": "2026-10-02T03:03:10.000Z",
+      "last_gps_utc": "2026-10-02T09:03:09.000Z"
+    },
+    {
+      "name": "half_open_upper_boundary_moves_to_next_window_for_both_index_formats",
+      "passed": true,
+      "matched": 2,
+      "gps_utc": "2026-10-02T09:03:10.000Z"
+    },
+    {
+      "name": "shifted_index_crosses_midnight_without_changing_gps_event",
+      "passed": true,
+      "packet": {
+        "_time": "2026-10-03T00:01:00Z",
+        "_measurement": "device_pvt_log",
+        "imei_no": "865510087948487",
+        "packet_type": "H",
+        "vehicle_number": "MIDNIGHT1",
+        "date_time": "02102026 183100",
+        "gps_fix": "1",
+        "gps_rawdata": "$PVT,ACT1",
+        "latitude": 24,
+        "longitude": 86,
+        "packet_header": "$PVT",
+        "server_date_time": "1790931790000",
+        "gps_date_time_iso": "2026-10-02T18:31:00.000Z",
+        "gps_date_time_ist": "2026-10-03 00:01:00.000",
+        "influx_index_time": "2026-10-03T00:01:00Z",
+        "influx_index_offset_seconds": 19800,
+        "server_date_time_iso": "2026-10-02T09:03:10.000Z",
+        "server_date_time_ist": "2026-10-02 14:33:10.000"
+      }
+    },
+    {
+      "name": "worker_probe_accepts_all_mixed_rows_and_signed_second_page",
+      "passed": true,
+      "pages": [
+        {
+          "page": 1,
+          "count": 200,
+          "accepted": 200,
+          "has_more": true,
+          "cursor_used": false,
+          "elapsed_ms": 886,
+          "first_gps_utc": "2026-10-02T03:03:10.000Z",
+          "last_gps_utc": "2026-10-02T06:21:10.000Z",
+          "first_influx_index_time": "2026-10-02T03:03:10Z",
+          "index_offset_seconds_in_page": [
+            0,
+            19800
+          ]
+        },
+        {
+          "page": 2,
+          "count": 4,
+          "accepted": 4,
+          "has_more": false,
+          "cursor_used": true,
+          "elapsed_ms": 69,
+          "first_gps_utc": "2026-10-02T06:22:10.000Z",
+          "last_gps_utc": "2026-10-02T09:03:09.000Z",
+          "first_influx_index_time": "2026-10-02T11:52:10Z",
+          "index_offset_seconds_in_page": [
+            19800,
+            0
+          ]
+        }
+      ],
+      "accepted": 204
+    },
+    {
+      "name": "unsupported_offset_and_bad_calendar_fail_without_empty_success",
+      "passed": true,
+      "blocked": [
+        "ARCHIVE_TIME_MISMATCH",
+        "ARCHIVE_INVALID_GPS_TIME"
+      ]
+    },
+    {
+      "name": "nearby_and_nearest_use_gps_time_with_physical_index_lookup",
+      "passed": true,
+      "nearby_count": 200,
+      "nearest_count": 3
+    },
+    {
+      "name": "two_day_offline_recovery_uses_native_query_and_simulated_mysql_transitions",
+      "passed": true,
+      "queued_gps_utc": [
+        "2026-09-30T09:03:10.000Z",
+        "2026-09-30T09:04:10.000Z",
+        "2026-09-30T09:05:10.000Z"
+      ],
+      "trip_date_ist": "2026-09-30 14:34:10.000",
+      "completion_date_ist": "2026-09-30 14:35:10.000"
+    }
+  ]
+}

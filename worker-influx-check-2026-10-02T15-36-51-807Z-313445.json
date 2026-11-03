@@ -1,0 +1,66 @@
+{
+  "kind": "worker_history_check",
+  "build": "2026-10-02-influx-gps-utc-index-fix",
+  "captured_at_utc": "2026-10-02T15:36:47.976Z",
+  "read_only": true,
+  "success": true,
+  "stage": "completed",
+  "vehicle_no": "JH02AK7064",
+  "config": {
+    "enabled": true,
+    "url": "http://18.60.155.145:8086",
+    "org": "AISPL",
+    "bucket": "gps_bucket",
+    "measurement": "device_pvt_log",
+    "token_configured": true,
+    "page_size": 200,
+    "timeout_ms": 20000,
+    "window_ms": 21600000
+  },
+  "config_load_order": "src/config.js then src/archive-config.js (same as worker)",
+  "scope": "Bounded history validation only; does not inspect running PM2 environment or write trip data.",
+  "query_range": {
+    "from_gps_utc": "2026-10-02T03:03:10.000Z",
+    "until_gps_utc_exclusive": "2026-10-02T09:03:10.000Z",
+    "from_gps_ist": "2026-10-02 08:33:10.000",
+    "until_gps_ist_exclusive": "2026-10-02 14:33:10.000"
+  },
+  "max_pages": 2,
+  "pages": [
+    {
+      "page": 1,
+      "count": 200,
+      "accepted": 200,
+      "has_more": true,
+      "cursor_used": false,
+      "elapsed_ms": 1925,
+      "first_gps_utc": "2026-10-02T03:03:10.000Z",
+      "last_gps_utc": "2026-10-02T03:47:36.000Z",
+      "first_influx_index_time": "2026-10-02T08:33:10Z",
+      "index_offset_seconds_in_page": [
+        19800
+      ]
+    },
+    {
+      "page": 2,
+      "count": 200,
+      "accepted": 200,
+      "has_more": true,
+      "cursor_used": true,
+      "elapsed_ms": 1902,
+      "first_gps_utc": "2026-10-02T03:47:38.000Z",
+      "last_gps_utc": "2026-10-02T04:25:14.000Z",
+      "first_influx_index_time": "2026-10-02T09:17:38Z",
+      "index_offset_seconds_in_page": [
+        19800
+      ]
+    }
+  ],
+  "scanned": 400,
+  "accepted": 400,
+  "rejected": {},
+  "attempted_page": 2,
+  "window_complete": false,
+  "conclusion": "PAGES_VALIDATED_MORE_HISTORY_REMAINS",
+  "next_action": "Check the restarted worker for archive_recovery_progress, archive_recovery_ready and committed trip events. This probe does not prove MySQL writes."
+}

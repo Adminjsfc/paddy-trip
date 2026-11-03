@@ -1,0 +1,361 @@
+{
+  "mysql": "simulated",
+  "mqtt": "mapper invoked directly; no production broker",
+  "redis": "isolated emulator",
+  "results": [
+    {
+      "scenario": "27 m source IN -> 388 m OUT -> destination IN; GPS writes and cleanup",
+      "offline_days": 0,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-02 09:01:00.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-02 09:02:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 2
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "27 m source IN -> 388 m OUT -> destination IN; GPS writes and cleanup",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-01 09:01:00.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-01 09:02:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 2
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "27 m source IN -> 388 m OUT -> destination IN; GPS writes and cleanup",
+      "offline_days": 2,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-09-30 09:01:00.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-09-30 09:02:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 2
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Individual vehicle-trip IN works even if hash index field is absent",
+      "offline_days": 0,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-02 09:01:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 1
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Individual IN is used instead of stale OUT in lookup hash",
+      "offline_days": 0,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-02 09:01:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 1
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Trip discovered after packets: replay includes last point before lifting",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-01 09:01:00.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-01 09:02:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 2
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Trip discovered after packets: replay includes last point before lifting",
+      "offline_days": 2,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-09-30 09:01:00.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-09-30 09:02:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 2
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Missing-state fallback completes before late source history; late entry cannot duplicate writes",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-01 09:01:00.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-01 09:02:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 2
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Missing-state fallback completes before late source history; late entry cannot duplicate writes",
+      "offline_days": 2,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-09-30 09:01:00.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-09-30 09:02:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 2
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Missing Redis trip state: first OUT starts; later destination IN ends and cleans individual state",
+      "offline_days": 0,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-02 09:01:00.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-02 09:02:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 2
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Missing Redis trip state: first OUT starts; later destination IN ends and cleans individual state",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-01 09:01:00.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-01 09:02:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 2
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Missing Redis trip state: first OUT starts; later destination IN ends and cleans individual state",
+      "offline_days": 2,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-09-30 09:01:00.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-09-30 09:02:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 2
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Pre-lifting OUT preserves explicit assumption across worker restart",
+      "offline_days": 0,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-02 09:01:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 1
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Worker recreation preserves Redis IN source",
+      "offline_days": 0,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-02 09:01:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 1
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Lost MySQL commit response retries same start without duplicate update",
+      "offline_days": 0,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-02 09:01:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 1
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "MySQL unavailable keeps GPS in Redis then starts after recovery",
+      "offline_days": 0,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "22777",
+          "saved_datetime_ist": "2026-10-02 09:01:00.000"
+        }
+      ],
+      "trip_status": [
+        {
+          "id": "22777",
+          "status": 1
+        }
+      ],
+      "pending_packets": 0
+    }
+  ]
+}

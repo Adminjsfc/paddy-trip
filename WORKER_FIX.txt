@@ -1,0 +1,105 @@
+JSFC worker health and diagnostic fixes — 2 October 2026
+Build: 2026-10-02-worker-health-fix
+
+Validated input: trip-worker-health-2026-10-02T08-28-54-565Z.jsonl
+Capture time: 13:58:54 IST. These observations precede this new patch.
+
+The SQL builder patch is already deployed in the captured workers. All eight
+show zero fresh errors after their restart. The requested 46 vehicles have
+one pending packet, versus 33,758 in the 13:34 IST capture. Worker health totals
+36,649 successful packet flushes; this is not a count of unique packets or
+MySQL trip UPDATEs. The remaining queued vehicle is JH02AK7064. A non-empty
+queue during non-atomic reads is not by itself a fault.
+
+Changes in this release
+1. src/history-replay.js: count missing payloads before adding a preceding
+   source observation. Complete batches now report zero instead of -1; a real
+   missing payload is no longer hidden by the extra predecessor.
+2. src/worker-metrics.js and src/worker.js: separate history enqueue attempts,
+   records scanned, predecessor observations and successful packet flushes.
+   Preserve processed_packets as a compatibility alias for history enqueue
+   attempts. Include build, sampled_at and last_successful_flush_at in health.
+   Record successful flush only after MySQL commit AND Redis acknowledgement.
+   Sample pending vehicles after processing rather than reporting the old list.
+3. src/location-log.js and worker.js: suppress identical per-trip location logs
+   within one refresh interval. Changes in packet, trip or tracked state remain
+   visible. Keep a periodic refresh and discard inactive logging keys.
+4. Worker invalid_geofence logs identify the side, affected action, route,
+   store, coordinates and radius. Missing destination still does not prevent
+   a valid source departure. Keep pool logging configuration as supplied.
+5. operational-health.cjs / conclusions.cjs: distinguish recent worker errors
+   from collector read errors and pre-restart PM2 log entries. Parse current
+   process/PID and a two-minute recent-error window. Include worker progress
+   and service blockers in each trip/vehicle conclusion and worker summaries.
+6. One normal queued packet is informational; draining queues are labelled as
+   progressing. A queue of 1,000+ packets is a reporting warning when no queue
+   progress is observed. GPS event age is not used as queue residence time.
+7. Conclusions include route/store IDs, source-IN/OUT history evidence and
+   clear master-data actions. Negative old counters are labelled as monitoring
+   defects, never as proof that packet payloads have been lost.
+
+Deployment on the existing server
+
+  cd ~/services/jsfc-trip-service
+  unzip -o JSFC_Trip_Report_Validation.zip
+  bash trip-report-validation/apply-sql-fix.sh "$PWD" --restart-workers
+
+The installer name is retained for compatibility. It installs SIX files:
+  src/repository.js             (retains the deployed SQL builder fix)
+  src/worker.js
+  src/history-replay.js
+  src/worker-metrics.js          (new)
+  src/location-log.js
+  scripts/diagnose-trip.cjs
+
+It first validates syntax and backs up existing files. All six are installed
+before restarting jsfc-trip-0 through jsfc-trip-7. Database.js, configuration,
+MQTT subscriber, Redis queues and MySQL schema are not replaced. There are no
+new dependencies or helper MySQL tables. This package contains complete versions
+of these six files; retain any separate local customizations when reviewing
+the backups. Installing only worker.js without its new helper is insufficient.
+
+Check after deployment
+
+  node scripts/diagnose-trip.cjs JH02AK7064
+  node trip-report-validation/collect-worker-health.cjs --service-dir "$PWD" --history-all
+
+Expected: worker_ready and health build 2026-10-02-worker-health-fix, fresh
+sampled_at/last_successful_flush_at, missing_history_payloads >= 0, and no fresh
+worker SQL errors. Counters reset on process restart; compare them within the
+same PID. Collector and worker builds are reported separately. Start/end counts
+can legitimately remain zero until a qualifying event exists.
+
+Rollback if required: copy the backed-up src/ and scripts/ files from the
+printed sql-fix-backup-* directory into the service and restart those eight
+workers. new-files.txt lists files absent before installation; the added metrics
+helper may safely remain unused by the restored worker. Retain Redis contents.
+
+Data issues not repairable from this capture
+- Route 285 / destination store 24258 returns NULL destination coordinates.
+  Verify the route/store active flags and actual coordinates/radius. Affected
+  IDs: 23193, 23211, 23228, 23244. No guessed coordinate UPDATE is included.
+- SOURCE_EXIT_NOT_OBSERVED: JH05CH5306/23402, JH02S8289/23334,
+  JH02BK5837/23330, JH12B8356/22349, WB53C1664/23450. Source-IN evidence is
+  missing from the inspected state/history. Restore genuine earlier packets
+  through the normal ingress if available. The patch preserves the requested
+  observed IN -> OUT rule; it does not manufacture an entry or departure time.
+- No location: JH06J6168/23210, NL02L8382/23318, JH10AD6077/22849. Check the
+  exact vehicle topic and actual broker SUBACK/device publishing.
+
+Read-only master checks:
+  SELECT id, status, source_store_id, destination_store_id, time_duration
+  FROM tbl_route_master WHERE id = 285;
+  SELECT id, status, lat, lng, radius
+  FROM tbl_store_location_master WHERE id = 24258;
+
+Latest retained-history audit scanned 35,005 records for 45 vehicles: zero
+missing payloads, zero new start/end candidates under installed rules/current
+geometry. This cannot prove physical events never happened outside retained
+coverage. MySQL snapshot: 27 pending, 34 started, 1 completed.
+
+Validation: 69 focused service tests and 16 diagnostic tests passed, including
+eight real capture cases, historical/live transitions, SQL formatting, retries,
+duplicate events, worker-loop health and log suppression. An isolated installer
+check confirmed backups and preservation of Database.js. Tests use mock database
+and Redis interactions; this patch has not been deployed by the assistant.

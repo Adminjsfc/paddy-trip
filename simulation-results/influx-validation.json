@@ -1,0 +1,45 @@
+{
+  "build": "2026-10-02-utc-ist-display",
+  "service_tests": 201,
+  "diagnostic_tests": 23,
+  "all_unit_tests": 224,
+  "redis_simulations": {
+    "offline": 40,
+    "live": 29,
+    "start_recovery": 16,
+    "independent_trips": 8,
+    "influx_history_recovery": 15
+  },
+  "total_simulations": 108,
+  "redis_queue_checks": "PASS",
+  "installer_check": "PASS - 17 files, complete backups, preserved custom package settings/Database.js/.env; prior dependency-failure guard retained",
+  "transport": "IN_PROCESS_INFLUX_SERVICE",
+  "embedded_influx_tests": "Real GpsReportService with injected queryApi: Flux candidate/detail queries, stable signed cursor, restart, changed rows, cancellation, auth failures",
+  "recovery_simulation": "In-process getHistory fixture through real service adapter, Redis store and repository",
+  "redis": "isolated emulator with actual Lua",
+  "mysql": "simulated transactional adapter",
+  "production_influx_tested": false,
+  "production_deployed": false,
+  "utc_regressions": {
+    "tests": 11,
+    "result": "PASS",
+    "gps_source": "UTC DDMMYYYY HHmmss, raw packet fields 9 and 10",
+    "timezone_matrix": [
+      "UTC",
+      "Asia/Kolkata",
+      "America/New_York",
+      "Pacific/Auckland"
+    ],
+    "mysql_datetime_offset": "+05:30",
+    "live_and_2_day_late_events": "start/end/ETA and IST midnight verified"
+  },
+  "query_display_validation": {
+    "result": "PASS",
+    "utc_input": "unchanged UTC boundaries in generated Flux",
+    "ist_input": "explicit +05:30 normalized to UTC",
+    "ist_calendar_day": "previous-day UTC start checked",
+    "result_fields": "IST display dates added without changing raw UTC/cursor/epoch",
+    "exclusive_end": "accepted start and rejected exact end",
+    "jsonl_conclusions": "UTC and IST dates verified including midnight"
+  }
+}

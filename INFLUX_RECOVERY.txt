@@ -1,0 +1,191 @@
+JSFC embedded Influx history recovery
+Build: 2026-10-02-utc-ist-display
+
+Architecture
+The existing eight trip workers call src/influx/GpsReportService.js directly.
+src/archive-client.js validates its returned history pages. The service uses
+@influxdata/influxdb-client 1.35.0 to query InfluxDB directly. There is no report
+HTTP server, separate endpoint, port 3015, or extra PM2 application to start.
+MySQL still uses the supplied src/Database.js with separate read/write pools.
+
+Configuration
+Set the influx object in src/archive-config.js directly; .env is optional.
+Environment values, if supplied, override the defaults in that file:
+
+  INFLUX_URL=http://18.60.155.145:8086
+  INFLUX_ORG=AISPL
+  INFLUX_BUCKET=gps_bucket
+  INFLUX_MEASUREMENT=device_pvt_log
+  INFLUX_TOKEN=<your Influx read token>
+  ARCHIVE_RECOVERY_ENABLED=true
+
+No token is embedded in this release. Set it in the worker config or environment.
+The old GPS_HISTORY_API_URL and GPS_HISTORY_API_KEY are unused. A token previously
+set only in a standalone history-service/.env must be set in the worker config.
+GPS_HISTORY_CURSOR_SECRET is optional; otherwise a stable signing key is derived
+from the Influx connection settings. After rotation, a saved invalid cursor
+restarts the same time window while keeping staged packets and write intents.
+
+Existing project installation
+  cd ~/services/jsfc-trip-service
+  unzip -o JSFC_Trip_Report_Validation.zip
+  bash trip-report-validation/apply-influx-fix.sh "$PWD"
+
+The installer backs up 17 worker/diagnostic files and package manifests. It adds
+the pinned Influx client while preserving unrelated package dependencies. If the
+dependency install fails, worker files are not replaced or restarted. Database.js,
+.env, the MySQL schema, MQTT ingress and Redis data are preserved. Previous inline
+archive-config.js settings are in the backup; apply the direct Influx settings
+after installation. No additional MySQL table is created.
+
+Then configure the token and run this read-only check:
+  node scripts/check-history-service.cjs JH06J6168 2026-09-30T00:00:00Z 2026-10-02T10:00:00Z
+
+This directly queries the embedded service, validates five rows and closes its
+Influx connection. It does not write Redis/MySQL or start/end a trip.
+
+Restart the existing workers after configuration:
+  for shard in {0..7}; do pm2 restart "jsfc-trip-$shard" --update-env; done
+
+The installer also supports --restart-workers when Influx settings already exist
+in the worker environment. Do not start ecosystem.history.config.cjs. No separate
+history service is needed. A previously installed report server is left alone;
+the worker does not call it. Existing Redis progress is retained across migration.
+
+Complete project installation
+Use JSFC_Redis_Trip_Service_8_Workers.zip for a full project. Run npm ci in the
+project root, configure Database.js and src/archive-config.js, and use the existing
+ecosystem.config.cjs (one MQTT subscriber plus eight trip workers).
+
+Trip rules
+1. Recover history for pending trips from lifting c_date and started trips from
+   saved trip_date. Evaluate each trip independently using its own geofences.
+2. A real source-IN followed by source-OUT strictly after lifting starts a pending
+   trip. Actual recovered source visits take priority over the missing-state rule.
+3. If Redis geofence state is truly missing and no source-IN was recovered, the
+   requested source-IN-at-lifting assumption is retained. A real OUT packet after
+   lifting may start it. Existing OUTSIDE state does not use this assumption.
+4. Destination-IN strictly after trip_date completes a started trip. Nearest but
+   outside, equal-time or pre-start points do not complete it. A single timestamp
+   cannot both start and complete a pending trip.
+5. Start/end coordinates and dates use GPS events, converted to IST for MySQL.
+   NOW(), server receipt time and late upload time never replace GPS event time.
+6. The worker removes each completed trip's Redis geofence state after MySQL
+   confirmation. Active sibling trips remain independent.
+
+Why chronological history is used
+The service supports nearest/nearby searches, but nearest-only results cannot
+establish the first source exit or destination arrival. Recovery scans paginated
+history and records each trip's nearest and first-inside points in diagnostics.
+A nearest point outside the configured radius is never treated as INSIDE.
+
+Recovery, failures and live traffic
+Each worker owns one lazy Influx service instance, one history request at a time,
+with a 20-second deadline and cancellation. Scans use fixed upper GPS bounds,
+6-hour windows and 200-row pages. Influx agents close when the worker exits.
+Other vehicles are processed between query/import ticks. A slow query can delay
+that worker's next sweep by up to its deadline; MQTT keeps queuing live packets.
+
+The vehicle being recovered waits for its full scan/import before new transitions.
+Redis persists packets and progress before advancing the cursor. Staging and
+write queues do not expire. Imports are bounded, owner-fenced and idempotent.
+History cannot move the latest vehicle location backwards. Restarts resume the
+saved cursor/import. Unfinished MySQL intents reconcile their exact operations
+first, even while Influx is unavailable. A primary trip/route change forces a
+matching recovery before a new MySQL intent is written.
+
+Every 15 minutes, still-active vehicles rescan their relevant lifting/start range
+to catch late inserts behind an earlier cursor. Already committed trip dates are
+not retrospectively rewritten. The earliest event means the earliest qualifying
+event in the evidence available when the transition is committed.
+
+Validation and diagnostics
+- Exact vehicle, $PVT header, gps_fix=1, valid coordinates and packet_type required.
+- UTC date_time (DDMMYYYY HHmmss) must agree with Influx _time to the second.
+- Faulty publisher gps_timestamp/server_date_time never override confirmed UTC.
+- Validate page filters, range, time order, cursor progression and page byte size.
+- Invalid fix/header/coordinates are rejected. Wrong vehicle, time mismatch or
+  conflicting same-time coordinates block recovery with an explicit error.
+- An empty successful query differs from an Influx failure. Failures retain the
+  current recovery phase, last_error and retryAt. No automatic skip occurs.
+
+  node scripts/diagnose-trip.cjs JH06J6168
+  node trip-report-validation/collect-worker-health.cjs --service-dir "$PWD" --history-all
+
+worker_ready must show build 2026-10-02-utc-ist-display and
+archive_transport=IN_PROCESS_INFLUX_SERVICE. Recovery states are SCANNING,
+IMPORTING, READY and BLOCKED. READY means packets are queued, not that MySQL has
+completed the trip. trip_started/trip_ended log confirmed MySQL transitions.
+JSONL includes per-vehicle/per-trip conclusions and recovery errors.
+
+Limits and corrections
+GPS_HISTORY_MAX_DAYS defaults to 31; older trips report ARCHIVE_RANGE_LIMIT. Increase
+it explicitly and restart if needed. GPS_HISTORY_MAX_PACKETS defaults to 2,000,000.
+GPS_HISTORY_PAGE_SIZE is at most 500; GPS_HISTORY_WINDOW_HOURS at most 744.
+GPS_HISTORY_TIMEOUT_MS accepts 100..120000. No recovery limit silently skips data.
+Influx authentication/network errors use ARCHIVE_INFLUX_ERROR; missing token uses
+ARCHIVE_INFLUX_CONFIG. ARCHIVE_TIME_MISMATCH requires correcting the Influx writer
+and stored timestamps if _time was written with the old +05:30 epoch shift.
+Missing/wrong geofence coordinates still need correction in MySQL. History cannot
+invent them. ARCHIVE_RECOVERY_ENABLED=false explicitly selects Redis-only mode.
+
+Validation scope
+Local tests cover the real embedded Flux service with an injected Influx query
+interface, including signed pagination, candidate/detail consistency, cancellation
+and authentication errors. Recovery simulations use the internal service adapter,
+actual Redis Lua in an isolated emulator and simulated MySQL transactions. They
+cover live/1-day/2-day packets, outages, restart, partial import, cursor rotation,
+invalid packets, conflicting locations, ownership loss and duplicate writes.
+Production InfluxDB, MQTT delivery and MySQL failover have not been tested here.
+See simulation-results/influx-validation.json and influx-unit-results.json in the
+full project; the patch also contains influx-validation.json. Not deployed.
+
+Rollback
+Restore backed-up worker files (and package manifests if needed), run npm ci if
+restoring dependencies, then restart the eight workers. Preserve Redis queues and
+write intents. Rolling code back cannot undo already committed trip changes.
+
+UTC GPS time contract (confirmed with packet fields 9 and 10)
+  const gpsDateTime = `${safeValue(dataPacket[9])} ${safeValue(dataPacket[10])}`;
+  const gpsTimestamp = utcDateTimeToTimestamp(gpsDateTime);
+The shared parser in src/mqtt-packet.js also exports:
+  utcPacketPartsToTimestamp(dataPacket[9], dataPacket[10]);
+Both MQTT and Influx recovery call this UTC parser. Keep DDMMYYYY and HHmmss as
+strings to preserve leading zeroes. Do not use new Date(gpsDateTime), local date
+parsing, or add/subtract 19800000 from this UTC epoch.
+Example: 02102026 114531 = 2026-10-02T11:45:31.000Z. For the existing MySQL IST
+DATETIME convention this saves as 2026-10-02 17:15:31.000. MySQL lifting/trip_date
+are converted from IST to epoch before comparison. Influx query boundaries use
+UTC ISO Z. Redis stores the unchanged UTC epoch. The old release already used
+Date.UTC; this release exposes the raw-parts helper and adds explicit UTC tests.
+worker_ready/diagnose-trip show gps_time_basis=UTC_DATE_TIME and
+mysql_datetime_timezone=+05:30. No existing timestamps are rewritten.
+
+UTC filtering and IST user display
+Influx from_date and to_date are always converted to UTC ISO Z before querying.
+Already-UTC input is not shifted. Worker page() requires epoch milliseconds.
+The direct service also accepts UTC text (default Z) or ISO with an explicit
+offset. An IST UI selection must carry +05:30 or be converted to UTC before the
+call; do not pass a timezone-less IST string as if it were UTC.
+
+Example UTC request:
+  from_date: 2026-10-02T12:00:00Z
+  to_date:   2026-10-02T13:00:00Z
+User display: 2026-10-02 17:30:00 IST through 18:30:00 IST.
+
+For the complete IST calendar day 2 October, pass explicit boundaries:
+  from_date: 2026-10-02T00:00:00+05:30
+  to_date:   2026-10-03T00:00:00+05:30
+Influx receives 2026-10-01T18:30:00Z through 2026-10-02T18:30:00Z.
+Intervals include from_date and exclude to_date, preventing overlap between pages
+/windows. A date-only input without an offset denotes a UTC calendar day.
+
+Service result display_timezone is Asia/Kolkata. New display fields:
+  filters.from_date_ist and filters.to_date_exclusive_ist
+  data[].gps_date_time_ist and data[].server_date_time_ist
+The original _time, date_time, GPS epoch, UTC ISO fields and cursor remain UTC.
+Sorting and trip decisions continue to use UTC, never formatted display strings.
+check-history-service.cjs shows both UTC/IST query boundaries and GPS dates.
+Archive start logs and trip diagnostics also show both range formats.
+JSONL trip conclusions include evidence.gps_datetime_utc, gps_datetime_ist and
+display_timezone; original epoch values remain available for reconciliation.

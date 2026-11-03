@@ -1,0 +1,93 @@
+Build: 2026-10-02-influx-gps-utc-index-fix
+
+CONFIRMED INPUT
+Influx _time:       2026-10-02T03:05:04Z
+Packet date_time:  01102026 213504 (UTC, as confirmed by the user)
+Actual GPS UTC:    2026-10-01T21:35:04.000Z
+Actual GPS IST:    2026-10-02 03:05:04.000
+Index difference: +19800 seconds (+05:30)
+
+CAUSE AND CORRECTION
+The earlier service used _time as both its storage index and GPS event clock.
+Its raw index range could select packets whose true GPS time was outside the
+requested trip interval, and miss GPS events indexed 5h30 later. Validation
+then rejected the first mismatched row and held archive recovery.
+
+The corrected reader supports both observed legacy +19800-second indexes and
+proper UTC indexes in the same bucket. It does not modify stored Influx data.
+
+1. Scan physical _time from GPS_FROM through GPS_TO + 05:30, stop exclusive.
+2. Derive sortable UTC YYYY-MM-DDTHH:mm:ss.000Z from the stored date_time.
+3. Apply the exact GPS [FROM, TO) filter and GPS ordering BEFORE page limit.
+4. Use GPS time, server time, device/vehicle/type and physical _time as cursor
+   tie-breakers. Retain physical _time to retrieve exact detail records.
+5. Return gps_date_time_iso/ist from packet UTC. Return influx_index_time and
+   influx_index_offset_seconds separately; never add 05:30 to GPS event time.
+6. Accept only valid calendar dates and supported index offsets (0 or +19800s).
+   Other offsets still raise an explicit error. Stored publisher gps_timestamp
+   and server receive time do not determine trip start/end time.
+7. Upgrade Redis recovery query version 1 to 2 automatically: restart coverage
+   at its original GPS floor, clear its old cursor/retry, and keep staged valid
+   packets, pending inbox packets and unfinished MySQL intents. A lease-protected
+   save commits the upgrade; no manual Redis deletion/FLUSHDB is needed.
+
+The supplied sample is correctly EXCLUDED from the requested range beginning
+2026-10-02T03:03:10Z because its actual GPS event occurred on the previous day.
+It will be included when requesting its actual GPS interval instead.
+The reader does not change previously committed MySQL trip dates automatically.
+
+INSTALL INTO THE EXISTING SERVICE
+Upload the new ZIP to ~/services. Extract to a separate temporary folder and
+apply the supplied allowlisted installer so Database.js, archive-config.js,
+config.js, .env, ecosystem configuration and installed dependencies are retained.
+
+cd ~/services
+staging_dir=$(mktemp -d /tmp/jsfc-utc-fix-XXXXXXXX)
+unzip -q JSFC_Redis_Trip_Service_8_Workers.zip -d "$staging_dir"
+bash "$staging_dir/jsfc-trip-service/scripts/install-influx-utc-fix.sh" "$HOME/services/jsfc-trip-service"
+cd ~/services/jsfc-trip-service
+pm2 restart ecosystem.config.cjs --only jsfc-trip-0,jsfc-trip-1,jsfc-trip-2,jsfc-trip-3,jsfc-trip-4,jsfc-trip-5,jsfc-trip-6,jsfc-trip-7 --update-env
+
+VERIFY THE SAME UTC RANGE
+node scripts/check-worker-history.cjs JH02AK7064 2026-10-02T03:03:10Z 2026-10-02T09:03:10Z
+node scripts/diagnose-trip.cjs JH02AK7064
+pm2 logs jsfc-trip-7 --lines 200 --nostream
+
+Expected: new build above, worker check success=true, canonical first_gps_utc
+inside the requested GPS interval, physical index offset 0 or 19800.
+If more history remains after two pages, the probe reports that explicitly.
+Worker archive_recovery_query_upgraded / archive_recovery_progress should be
+followed by archive_recovery_ready after scanning/importing all windows. SQL
+trip_started/trip_ended events appear only for valid committed transitions.
+The probe itself is read-only and does not flush or change trip state.
+Send the generated worker-influx-check-*.json plus the vehicle diagnostic/log
+to confirm production recovery and actual committed trip transitions.
+
+VALIDATION
+See simulation-results/utc-index-validation.json and
+simulation-results/native-influx-index-validation.json for tested scope.
+The native test runs actual Flux against a fresh local InfluxDB with synthetic
+mixed-index data. Its MySQL transitions are simulated. Separate Redis tests
+execute the service Lua scripts against a local Redis emulator.
+No production MySQL/Redis/Influx writes or remote PM2 restarts were performed
+while preparing this package.
+
+Reproduce tests:
+node --test --test-isolation=none --test-reporter=tap
+python3 scripts/run-redis-emulator-check.py
+python3 scripts/run-native-influx-check.py /path/to/influxd
+
+The optional Redis script needs fakeredis[lua]. The native script starts and
+stops its own loopback-only instance with temporary storage and generated test
+credentials. It never loads production credentials for its Influx connection.
+
+Influx writer follow-up:
+Future writes should use the epoch parsed from raw UTC date_time as Point time,
+without adding 19800 seconds. This package changes the trip service reader;
+the separately deployed GPS writer is not included or modified. Existing
+shifted records remain readable and do not need a bulk rewrite for this fix.
+
+Primary Flux references used for implementation:
+https://docs.influxdata.com/flux/v0/stdlib/universe/range/
+https://docs.influxdata.com/flux/v0/stdlib/strings/substring/
+https://docs.influxdata.com/influxdb/v2/query-data/flux/

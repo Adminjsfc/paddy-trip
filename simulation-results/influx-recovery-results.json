@@ -1,0 +1,302 @@
+{
+  "build": "2026-10-02-influx-gps-utc-index-fix",
+  "history": "in-process service fixture through real worker adapter; native Flux covered separately",
+  "redis": "isolated emulator, actual Lua",
+  "mysql": "simulated transactional adapter",
+  "production_access": false,
+  "results": [
+    {
+      "scenario": "History arrives behind latest live destination; earliest GPS start/end and Redis cleanup",
+      "offline_days": 0,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-02 14:30:20.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-02 14:30:30.000"
+        }
+      ],
+      "service_calls": 2,
+      "last_error": null
+    },
+    {
+      "scenario": "History arrives behind latest live destination; earliest GPS start/end and Redis cleanup",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-01 14:30:20.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-01 14:30:30.000"
+        }
+      ],
+      "service_calls": 6,
+      "last_error": null
+    },
+    {
+      "scenario": "History arrives behind latest live destination; earliest GPS start/end and Redis cleanup",
+      "offline_days": 2,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-09-30 14:30:20.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-09-30 14:30:30.000"
+        }
+      ],
+      "service_calls": 10,
+      "last_error": null
+    },
+    {
+      "scenario": "Actual source visit takes precedence over earlier missing-state OUT assumption",
+      "offline_days": 2,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-09-30 14:30:20.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-09-30 14:30:30.000"
+        }
+      ],
+      "service_calls": 10,
+      "last_error": null
+    },
+    {
+      "scenario": "Existing OUTSIDE Redis state recovers a previously missed source visit",
+      "offline_days": 2,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-09-30 14:30:20.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-09-30 14:30:30.000"
+        }
+      ],
+      "service_calls": 10,
+      "last_error": null
+    },
+    {
+      "scenario": "Already started trip finds historical arrival strictly after start",
+      "offline_days": 2,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-09-30 14:30:30.000"
+        }
+      ],
+      "service_calls": 9,
+      "last_error": null
+    },
+    {
+      "scenario": "Influx outage after page one preserves Redis staging/cursor until recovery",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-01 14:30:20.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-01 14:30:30.000"
+        }
+      ],
+      "service_calls": 7,
+      "last_error": "ARCHIVE_INFLUX_ERROR"
+    },
+    {
+      "scenario": "Worker restart resumes saved service cursor and partial import",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-01 14:30:20.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-01 14:30:30.000"
+        }
+      ],
+      "service_calls": 6,
+      "last_error": null
+    },
+    {
+      "scenario": "Service signing-key change retries same window without duplicate writes",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-01 14:30:20.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-01 14:30:30.000"
+        }
+      ],
+      "service_calls": 8,
+      "last_error": "ARCHIVE_INFLUX_ERROR"
+    },
+    {
+      "scenario": "Archive/live same-time conflicting coordinates block import without overwriting queued live packet",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [],
+      "service_calls": 5,
+      "last_error": "ARCHIVE_RECOVERY_ERROR"
+    },
+    {
+      "scenario": "Lost MySQL commit retries fixed historical operations with no duplicate or sibling assignment",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-01 14:30:20.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-01 14:30:30.000"
+        }
+      ],
+      "service_calls": 6,
+      "last_error": null
+    },
+    {
+      "scenario": "MySQL outage keeps imported history in durable inbox and writes original GPS time after recovery",
+      "offline_days": 2,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-09-30 14:30:20.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-09-30 14:30:30.000"
+        }
+      ],
+      "service_calls": 10,
+      "last_error": null
+    },
+    {
+      "scenario": "Wrong vehicle in history data cannot enter this vehicle queue",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [],
+      "service_calls": 1,
+      "last_error": "ARCHIVE_WRONG_VEHICLE"
+    },
+    {
+      "scenario": "Invalid header/fix are excluded while valid history remains usable",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-01 14:30:20.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-10-01 14:30:30.000"
+        }
+      ],
+      "service_calls": 7,
+      "last_error": null
+    },
+    {
+      "scenario": "Lease loss prevents page checkpoint and payload staging",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [],
+      "service_calls": 1,
+      "last_error": null
+    },
+    {
+      "scenario": "Mixed UTC and legacy shifted index rows retain GPS start/end and deduplicate live history",
+      "offline_days": 2,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-09-30 14:30:20.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-09-30 14:30:30.000"
+        }
+      ],
+      "service_calls": 10,
+      "last_error": null
+    },
+    {
+      "scenario": "Version-one cursor upgrade preserves staged payloads, live inbox and GPS decisions",
+      "offline_days": 2,
+      "result": "PASS",
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-09-30 14:30:20.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "23210",
+          "saved_datetime_ist": "2026-09-30 14:30:30.000"
+        }
+      ],
+      "service_calls": 11,
+      "last_error": null
+    },
+    {
+      "scenario": "Lease loss during query-version upgrade leaves Redis coverage and staged payloads intact",
+      "offline_days": 1,
+      "result": "PASS",
+      "writes": [],
+      "service_calls": 1,
+      "last_error": null
+    }
+  ]
+}

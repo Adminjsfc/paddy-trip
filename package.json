@@ -1,0 +1,21 @@
+{
+  "name": "jsfc-trip-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Eight vehicle-sharded workers for GPS-based trip transitions",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/worker.js",
+    "test": "node --test",
+    "test:paddy": "node --test test/paddy-integration.test.js test/repository.test.js test/domain.test.js test/location-log.test.js"
+  },
+  "dependencies": {
+    "@influxdata/influxdb-client": "1.35.0",
+    "dotenv": "^16.4.7",
+    "ioredis": "^5.4.2",
+    "mqtt": "^5.16.0",
+    "mysql2": "^3.12.0"
+  }
+}

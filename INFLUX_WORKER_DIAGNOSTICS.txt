@@ -1,0 +1,70 @@
+Earlier 2026-10-02 diagnostics update (retained for context).
+The index shift is now confirmed and corrected. Use UTC_INDEX_FIX.txt for the
+current build, installation and validation commands.
+
+Observed production evidence
+- The supplied check at 2026-10-02 14:37:28 UTC succeeded for JH02AK7064.
+- It queried 03:03:10Z through 09:03:10Z with limit=1 and returned one row
+  at 03:05:04Z, with more rows available.
+- Dependency loading and this direct query succeeded in that CLI process.
+- This does not prove that the existing PM2 workers use the same configuration,
+  that 200-row pages/pagination succeed, or that all rows pass PVT/UTC validation.
+- The previous generic worker error does not identify the production root cause.
+
+Confirmed code correction
+- Keep the SDK error name, code, HTTP status, redacted message and bounded cause
+  chain in the worker's archive_recovery_retry log and Redis job last_error.
+- Identify candidate query, detail query or packet materialization failures.
+- Log successful durable page progress only after Redis accepts the page.
+- Log safe effective archive settings at worker_ready (never the token).
+- Add a bounded, read-only probe using the worker configuration load order,
+  configured page size, signed next-page cursor and archive packet validator.
+- Trip state, historical ordering, SQL writes, deduplication and recovery gating
+  are unchanged. No queue flush, Redis reset or additional MySQL table is needed.
+
+Existing installation (preserves your local Database.js/configuration)
+1. Upload the new ZIP beside your service directory, then:
+
+   cd ~/services
+   staging_dir=$(mktemp -d /tmp/jsfc-influx-diagnostics-XXXXXXXX)
+   unzip -q JSFC_Redis_Trip_Service_8_Workers.zip -d "$staging_dir"
+   bash "$staging_dir/jsfc-trip-service/scripts/install-influx-diagnostics.sh" "$HOME/services/jsfc-trip-service"
+
+2. Restart only the trip workers so changed code/configuration is loaded:
+
+   cd ~/services/jsfc-trip-service
+   pm2 restart ecosystem.config.cjs --only jsfc-trip-0,jsfc-trip-1,jsfc-trip-2,jsfc-trip-3,jsfc-trip-4,jsfc-trip-5,jsfc-trip-6,jsfc-trip-7 --update-env
+
+3. Test the same six-hour UTC window with worker-sized pages:
+
+   node scripts/check-worker-history.cjs JH02AK7064 2026-10-02T03:03:10Z 2026-10-02T09:03:10Z
+
+   The default limit is the configured worker page size (normally 200), with
+   at most two pages. Optional final argument 1..10 controls the page count.
+   No MySQL, Redis or MQTT connection is made by this probe. It writes only a
+   local worker-influx-check-*.json report. Upload that report for analysis.
+   The CLI loads the same modules in the same order, but cannot inspect the
+   already-running PM2 environment. Compare safe settings with worker_ready.
+
+4. Collect worker output and refreshed vehicle status:
+
+   pm2 logs jsfc-trip-7 --lines 200 --nostream
+   node scripts/diagnose-trip.cjs JH02AK7064
+
+Expected observations
+- New worker_ready build: 2026-10-02-influx-worker-diagnostics.
+- archive_recovery_progress: scanned/accepted advance after durable Redis save.
+- archive_recovery_ready: complete historical scan has been imported to queue.
+- trip_started/trip_ended with mysql_write=COMMITTED only if a valid transition
+  was evaluated and committed; absence of these events alone is not an error.
+- Existing retryAt backoff can delay the next attempt by up to five minutes.
+  Do not delete the Redis job to force a retry.
+- If failure continues, last_error.diagnostic shows the actual redacted SDK
+  cause, query phase, range, page size and cursor presence.
+
+Testing scope
+See simulation-results/worker-diagnostics-validation.json for this build's
+local test results. Mock/emulator checks are not production Influx/MySQL proof.
+The production root cause remains unconfirmed until the worker-path report or
+new detailed worker error is available. This is an observability correction;
+it does not claim that an unknown network, query or data fault has been fixed.

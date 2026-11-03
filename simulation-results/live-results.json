@@ -1,0 +1,635 @@
+{
+  "scope": "Live packet simulation, Redis/Lua emulator and simulated MySQL transactions; no production access",
+  "count": 29,
+  "results": [
+    {
+      "scenario": "Full live journey: source -> road -> destination",
+      "result": "PASS",
+      "packets_received": 4,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:01:00.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 11:00:00.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 2,
+          "start_ist": "2026-09-30 10:01:00.000",
+          "end_ist": "2026-09-30 11:00:00.000"
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Repeated source points do not start",
+      "result": "PASS",
+      "packets_received": 4,
+      "writes": [],
+      "trips": [
+        {
+          "id": "1",
+          "status": 0,
+          "start_ist": null,
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "At lifting time outside source stays pending",
+      "result": "PASS",
+      "packets_received": 2,
+      "writes": [],
+      "trips": [
+        {
+          "id": "1",
+          "status": 0,
+          "start_ist": null,
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Repeated road points start only once",
+      "result": "PASS",
+      "packets_received": 4,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 1,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Repeated destination points end only once",
+      "result": "PASS",
+      "packets_received": 5,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:01:00.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 2,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": "2026-09-30 10:01:00.000"
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Duplicate same-second redelivery has one effect",
+      "result": "PASS",
+      "packets_received": 3,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 1,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Same-second conflicting location is rejected",
+      "result": "PASS",
+      "packets_received": 2,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 1,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Source boundary counts as inside",
+      "result": "PASS",
+      "packets_received": 2,
+      "writes": [],
+      "trips": [
+        {
+          "id": "1",
+          "status": 0,
+          "start_ist": null,
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Destination boundary counts as inside",
+      "result": "PASS",
+      "packets_received": 4,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:01:00.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 2,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": "2026-09-30 10:01:00.000"
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Return to source does not undo a start",
+      "result": "PASS",
+      "packets_received": 3,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 1,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Arrival after ETA still ends",
+      "result": "PASS",
+      "packets_received": 3,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 13:00:00.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 2,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": "2026-09-30 13:00:00.000"
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "No destination evidence keeps trip open",
+      "result": "PASS",
+      "packets_received": 3,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 1,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Missing source geofence blocks start",
+      "result": "PASS",
+      "packets_received": 2,
+      "writes": [],
+      "trips": [
+        {
+          "id": "1",
+          "status": 0,
+          "start_ist": null,
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Missing destination allows start; arrival waits for valid destination",
+      "result": "PASS",
+      "packets_received": 3,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 1,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Invalid duration starts trip with NULL ETA",
+      "result": "PASS",
+      "packets_received": 2,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 1,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Invalid GPS fix produces no queue entry",
+      "result": "PASS",
+      "packets_received": 1,
+      "writes": [],
+      "trips": [
+        {
+          "id": "1",
+          "status": 0,
+          "start_ist": null,
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Invalid coordinates produce no queue entry",
+      "result": "PASS",
+      "packets_received": 1,
+      "writes": [],
+      "trips": [
+        {
+          "id": "1",
+          "status": 0,
+          "start_ist": null,
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Malformed date produces no queue entry",
+      "result": "PASS",
+      "packets_received": 1,
+      "writes": [],
+      "trips": [
+        {
+          "id": "1",
+          "status": 0,
+          "start_ist": null,
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Excessive future GPS date is rejected",
+      "result": "PASS",
+      "packets_received": 1,
+      "writes": [],
+      "trips": [
+        {
+          "id": "1",
+          "status": 0,
+          "start_ist": null,
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Close old trip before next live start",
+      "result": "PASS",
+      "packets_received": 3,
+      "writes": [
+        {
+          "kind": "end",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:01:00.000"
+        },
+        {
+          "kind": "start",
+          "trip_id": "2",
+          "saved_datetime_ist": "2026-09-30 10:01:00.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 2,
+          "start_ist": "2026-09-30 10:00:00.000",
+          "end_ist": "2026-09-30 10:01:00.000"
+        },
+        {
+          "id": "2",
+          "status": 1,
+          "start_ist": "2026-09-30 10:01:00.000",
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Unmatched open trip remains open while another trip starts",
+      "result": "PASS",
+      "packets_received": 3,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "2",
+          "saved_datetime_ist": "2026-09-30 10:01:00.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 1,
+          "start_ist": "2026-09-30 10:00:00.000",
+          "end_ist": null
+        },
+        {
+          "id": "2",
+          "status": 1,
+          "start_ist": "2026-09-30 10:01:00.000",
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "All matching open trips close",
+      "result": "PASS",
+      "packets_received": 2,
+      "writes": [
+        {
+          "kind": "end",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:01:00.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "2",
+          "saved_datetime_ist": "2026-09-30 10:01:00.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 2,
+          "start_ist": "2026-09-30 10:00:00.000",
+          "end_ist": "2026-09-30 10:01:00.000"
+        },
+        {
+          "id": "2",
+          "status": 2,
+          "start_ist": "2026-09-30 10:00:00.000",
+          "end_ist": "2026-09-30 10:01:00.000"
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Live database outage retains then drains packets",
+      "result": "PASS",
+      "packets_received": 3,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:01:00.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 2,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": "2026-09-30 10:01:00.000"
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Lost commit response retries without duplicate write",
+      "result": "PASS",
+      "packets_received": 2,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 1,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Redis cache failure after commit preserves journal for retry",
+      "result": "PASS",
+      "packets_received": 2,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 1,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Lease loss prevents stale worker writing",
+      "result": "PASS",
+      "packets_received": 2,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 1,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": null
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Live start followed by delayed history destination closes correctly",
+      "result": "PASS",
+      "packets_received": 4,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:01:00.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 2,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": "2026-09-30 10:01:00.000"
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "Source observed, first destination point starts only; later point ends",
+      "result": "PASS",
+      "packets_received": 3,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:02.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 2,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": "2026-09-30 10:00:02.000"
+        }
+      ],
+      "pending_packets": 0
+    },
+    {
+      "scenario": "301-point backlog crosses write batches without lost arrival",
+      "result": "PASS",
+      "packets_received": 302,
+      "writes": [
+        {
+          "kind": "start",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:00:01.000"
+        },
+        {
+          "kind": "end",
+          "trip_id": "1",
+          "saved_datetime_ist": "2026-09-30 10:05:01.000"
+        }
+      ],
+      "trips": [
+        {
+          "id": "1",
+          "status": 2,
+          "start_ist": "2026-09-30 10:00:01.000",
+          "end_ist": "2026-09-30 10:05:01.000"
+        }
+      ],
+      "pending_packets": 0
+    }
+  ]
+}

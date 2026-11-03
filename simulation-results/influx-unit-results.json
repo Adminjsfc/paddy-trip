@@ -1,0 +1,116 @@
+{
+  "build": "2026-10-02-utc-ist-display",
+  "results": [
+    {
+      "file": "jsfc-trip-service/test/active-subscriptions.test.js",
+      "tests": 9,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/archive-client.test.js",
+      "tests": 24,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/archive-recovery.test.js",
+      "tests": 16,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/capture-regressions.test.js",
+      "tests": 8,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/database.test.js",
+      "tests": 7,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/domain.test.js",
+      "tests": 11,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/geofence-state.test.js",
+      "tests": 8,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/history-replay.test.js",
+      "tests": 5,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/independent-trips.test.js",
+      "tests": 7,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/influx-service.test.js",
+      "tests": 12,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/location-log.test.js",
+      "tests": 4,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/missing-state-start.test.js",
+      "tests": 22,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/mqtt-packet.test.js",
+      "tests": 10,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/repository.test.js",
+      "tests": 22,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/sql-builder.test.js",
+      "tests": 3,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/start-regressions.test.js",
+      "tests": 12,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/utc-trip-time.test.js",
+      "tests": 11,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/worker-loop.test.js",
+      "tests": 3,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/worker-metrics.test.js",
+      "tests": 2,
+      "result": "PASS"
+    },
+    {
+      "file": "jsfc-trip-service/test/write-buffer.test.js",
+      "tests": 5,
+      "result": "PASS"
+    },
+    {
+      "file": "trip-report-validation/test/conclusions.test.cjs",
+      "tests": 19,
+      "result": "PASS"
+    },
+    {
+      "file": "trip-report-validation/test/operational-health.test.cjs",
+      "tests": 4,
+      "result": "PASS"
+    }
+  ],
+  "total": 224
+}

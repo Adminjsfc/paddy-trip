@@ -1,0 +1,34 @@
+{
+  "build": "2026-10-02-influx-worker-diagnostics",
+  "validated_at_utc": "2026-10-02T14:55:20.866335+00:00",
+  "unit_tests": {
+    "command": "node --test --test-isolation=none --test-reporter=tap",
+    "passed": 210,
+    "failed": 0
+  },
+  "simulations": {
+    "offline": 40,
+    "live": 29,
+    "start_fix": 16,
+    "independent_trips": 8,
+    "influx_recovery": 15,
+    "total": 108,
+    "failed": 0
+  },
+  "redis_queue_checks": "PASS using local fakeredis emulator",
+  "syntax_checks": "PASS",
+  "installer_smoke_check": "PASS; Database.js/config.js/archive-config.js/.env/PM2 configuration preserved; previous files backed up",
+  "production_connections_during_tests": false,
+  "production_evidence": {
+    "source": "influx-check-2026-10-02T14-37-28-259Z-311956.json",
+    "direct_limit_1_query_success": true,
+    "returned_rows": 1,
+    "has_more": true
+  },
+  "limitations": [
+    "Influx SDK query fixtures were mocked; no live Influx query was made in local tests.",
+    "MySQL transactions were simulated; no production MySQL writes were performed.",
+    "Production worker failure cause is not yet confirmed.",
+    "Server installation/restart and worker-path validation remain to be run by the server operator."
+  ]
+}

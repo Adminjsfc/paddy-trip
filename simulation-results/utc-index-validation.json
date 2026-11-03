@@ -1,0 +1,44 @@
+{
+  "build": "2026-10-02-influx-gps-utc-index-fix",
+  "validated_at_utc": "2026-10-02T15:32:17.328982+00:00",
+  "confirmed_production_sample": {
+    "influx_time": "2026-10-02T03:05:04Z",
+    "packet_date_time": "01102026 213504",
+    "gps_utc": "2026-10-01T21:35:04.000Z",
+    "index_difference_seconds": 19800
+  },
+  "unit_tests": {
+    "passed": 214,
+    "failed": 0,
+    "command": "node --test --test-isolation=none --test-reporter=tap"
+  },
+  "redis_simulations": {
+    "offline": 40,
+    "live": 29,
+    "start_fix": 16,
+    "independent_trips": 8,
+    "archive_recovery": 18,
+    "total": 111,
+    "failed": 0,
+    "engine": "fakeredis local emulator; actual service Lua scripts"
+  },
+  "native_influx_tests": {
+    "passed": 7,
+    "failed": 0,
+    "engine": "InfluxDB OSS 2.9.1",
+    "fixture": "synthetic GPS rows; real Flux queries and actual SDK",
+    "report": "native-influx-index-validation.json"
+  },
+  "installer": "PASS; copied required code and tests, preserved Database.js/configuration, backed up old files",
+  "mysql": "simulated transactional adapter",
+  "production_access_during_validation": false,
+  "production_deployed": false,
+  "scope": [
+    "Read-side compatibility for UTC and UTC+19800s physical indexes.",
+    "Canonical GPS from date_time; exact GPS window filtering and ordering before pagination.",
+    "Physical _time retained for exact detail lookup and tie-breaking.",
+    "Version-1 archive coverage re-scanned without deleting staged/pending packets.",
+    "Other index shifts still require investigation; no blanket validation bypass.",
+    "Previously committed trip dates and external GPS writer were not modified."
+  ]
+}

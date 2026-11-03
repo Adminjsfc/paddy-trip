@@ -1,0 +1,26 @@
+{
+  "build": "2026-10-02-missing-state-start",
+  "service_tests": 136,
+  "diagnostic_tests": 18,
+  "focused_missing_state_tests": 22,
+  "redis_simulations": {
+    "offline": 40,
+    "live": 29,
+    "start_recovery": 16,
+    "independent_trips": 8
+  },
+  "redis_queue_checks": "PASS",
+  "installer_check": {
+    "eight_files_match": "PASS",
+    "backup_created": "PASS",
+    "database_preserved": "PASS"
+  },
+  "database": "simulated",
+  "redis": "isolated emulator",
+  "production_deployed": false,
+  "report_source": "trip-worker-health-2026-10-02T09-04-41-552Z.jsonl",
+  "open_trips": {
+    "pending": 27,
+    "started": 34
+  }
+}

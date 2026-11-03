@@ -1,0 +1,93 @@
+JSFC missing Redis trip-state fallback — 2 October 2026
+Build: 2026-10-02-missing-state-start
+
+Requested policy
+For a pending primary MySQL trip (trip_status = 0), when no per-vehicle/per-trip
+Redis geofence state is available, assume source-IN at lifting_date (tbl_trip.c_date).
+A valid source-OUT GPS packet strictly AFTER that time starts the trip. The saved
+trip_date and start coordinates come from the actual packet, not NOW(). Pending
+trip_date is NULL and therefore is not the comparison cutoff.
+
+The assumption is explicitly recorded as source_assumed_in_at; it is NOT a
+fabricated GPS source-entry packet. source_entered_at remains real evidence or
+NULL. trip_started logs and write intents include start_basis=MISSING_REDIS_STATE
+and assumed_source_in_at. Actual observed departures use OBSERVED_SOURCE_EXIT.
+
+Scope and boundaries
+- Live and historical $PVT packets use the same GPS-time rule. Source geometry,
+  GPS fix, packet validation and lifting-time checks still apply.
+- No GPS: no start. Inside source: no start. At/before lifting: no start.
+- An assumption initialized from a pre-lifting packet survives a worker restart
+  until a qualifying post-lifting observation. Actual source-IN then OUT remains
+  an observed departure.
+- Existing OUTSIDE state without an observed exit is NOT missing state. Existing
+  states and historical replay cursors cannot silently create this fallback.
+- Started/completed trips cannot restart. Trips remain independent by vehicle+ID.
+- End requires destination-IN GPS time strictly after saved trip_date. A first
+  packet already at destination can start a missing-state pending trip, but a
+  later destination packet is required to end it; one timestamp cannot do both.
+- Only received/retained packets can supply timestamps. Late-arriving older
+  evidence does not rewrite an already committed start/end timestamp.
+- Redis write intent precedes MySQL UPDATE. A connection failure preserves queued
+  work; lost-commit retries reconcile exact recorded targets without duplicate
+  writes. Completed geofence keys are removed only after confirmed MySQL commit.
+
+Deployment on your existing server
+  cd ~/services/jsfc-trip-service
+  unzip -o JSFC_Trip_Report_Validation.zip
+  bash trip-report-validation/apply-sql-fix.sh "$PWD" --restart-workers
+
+The compatibility installer validates syntax, backs up and installs EIGHT files:
+  src/repository.js
+  src/worker.js
+  src/geofence-state.js
+  src/transition-decisions.js
+  src/history-replay.js
+  src/worker-metrics.js
+  src/location-log.js
+  scripts/diagnose-trip.cjs
+
+It restarts jsfc-trip-0 through jsfc-trip-7 after copying all files. Database.js,
+configuration, MQTT ingress, Redis queues and schema are not replaced. There are
+no additional MySQL tables or dependencies. Do not clear Redis to force fallback.
+These are complete files; preserve any separate local customizations as needed.
+
+Read-only check after restart
+  node scripts/diagnose-trip.cjs JH06J6168
+  node trip-report-validation/collect-worker-health.cjs --service-dir "$PWD" --history-all
+
+Expected worker build: 2026-10-02-missing-state-start. worker_ready reports
+start_policy=ASSUME_SOURCE_IN_ONLY_WHEN_REDIS_STATE_MISSING. Read-only diagnostics
+show eligibility; only a committed trip_started event / primary MySQL row confirms
+a write. Older saved intents finish their already-recorded operations.
+
+Latest supplied capture: 2026-10-02 14:34:48 IST
+Source: trip-worker-health-2026-10-02T09-04-41-552Z.jsonl
+62 requested trips: 27 pending, 34 started, 1 completed; Excel lists 61 open trips.
+Pending: 20 inside source; 5 without observed source exit; 2 without GPS.
+Started: 30 outside destination; 3 invalid destination; 1 without GPS.
+These are observations before this new patch, not post-deployment results.
+
+Missing-state pending trips are JH06J6168/23210 and NL02L8382/23318. Both also
+lack GPS, so they still need a valid source-OUT packet after lifting.
+The five existing-state pending trips 23402, 23334, 23330, 22349 and 23450 are
+outside source but lack departure evidence; this missing-state-only rule does
+not force those trips to start.
+Route 285 / store 24258 has missing destination coordinates. Started trips
+23193, 23228 and 23244 cannot complete until verified master data is corrected.
+Pending trip 23211 uses that destination too. No coordinates are guessed.
+
+Validation
+136 service tests and 18 diagnostic tests pass, including 22 focused missing-state
+cases: live/history, strict cutoff, existing states, replay isolation, duplicate
+events, 1/2-day offline GPS times, missing geometry, outage and lost commit.
+93 Redis emulator scenarios passed (40 offline, 29 live, 16 start/recovery,
+8 independent-trip), plus Redis queue/Lua checks. The emulator runs the actual
+parser, Store and Lua scripts with a
+simulated MySQL adapter. Production MQTT delivery, MySQL locks and failover are
+not exercised; this package has not been deployed by the assistant.
+
+Rollback: restore backed-up src/ and scripts/ files from the printed
+sql-fix-backup-* directory and restart the eight workers. This reverses code,
+not MySQL transitions already committed under the new rule. Keep Redis intents
+and packet queues intact.
