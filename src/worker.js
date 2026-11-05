@@ -1,5 +1,6 @@
 'use strict';
 const cfg = require('./config');
+const { tripListEntry } = require('./trip-list');
 const { Repository } = require('./repository');
 const { connection, Store } = require('./redis-store');
 const { flushVehicle, reconnectable } = require('./write-buffer');
@@ -54,9 +55,7 @@ async function main() {
       log(status === 0 ? 'pending_trip_list' : 'active_trip_list', {
         reason, trip_status: status, trip_count: selected.length,
         trip_ids: selected.map(t => String(t.id)),
-        trips: selected.map(t => ({
-          trip_id: String(t.id), vehicle_no: t.vehicle_no
-        }))
+        trips: selected.map(t => tripListEntry(t, cfg.offset))
       });
     }
   }

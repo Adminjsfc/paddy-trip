@@ -7,7 +7,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "start": "node src/worker.js",
+    "start": "node scripts/start-all.cjs",
+    "start:worker": "node src/worker.js",
     "test": "node --test",
     "test:paddy": "node --test test/paddy-integration.test.js test/repository.test.js test/domain.test.js test/location-log.test.js"
   },

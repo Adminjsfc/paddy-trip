@@ -57,6 +57,21 @@ continue to require a recorded source crossing. Missing GPS cannot start a trip.
 
 This package reads and updates the existing `shipments`, `vehicles`, and `shipment_events` tables from the paddy service schema. All database queries go through `src/Database.js`, using the same `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME` environment variables as `paddy`. The default database is `sfc_cmr`; configure credentials outside source control. Pool limits default to four write and two read connections per worker.
 
+Shipment statuses follow the backend workflow:
+
+For local startup, run `npm.cmd start` (Windows) or `npm start`. This starts the MQTT subscriber and all eight shard workers together, with combined console logs; inherited SHARD_ID settings do not limit startup. Stop existing individual workers or PM2 apps before using this launcher. Ctrl+C shuts down all children. If a child exits unexpectedly, the launcher restarts only that service with exponential backoff from 1 to 30 seconds; healthy services keep running. Fatal worker logs remain visible. Ctrl+C cancels pending restarts. Use `npm run start:worker` only when intentionally running one shard. The PM2 ecosystem remains available for managed deployments; choose one startup method.
+
+| Shipment status | trip_status | Worker behavior |
+| --- | --- | --- |
+| PLANNED | 0 | Backend must dispatch first |
+| DISPATCHED | 0 | Pending; source exit after dispatch starts the trip |
+| IN_TRANSIT | 1 | Active; destination entry after start completes the trip |
+| ARRIVED | 2 | GPS trip complete; backend handles delivery |
+| DELIVERED | 2 | No trip processing |
+| CANCELLED | 0 | No trip processing |
+
+Discovery requires a matching DISPATCHED/0 or IN_TRANSIT/1 pair. Console trip lists include both status fields, dispatch/start timestamps and missing_timestamps. Missing times remain visible for correction; the worker does not invent them. Lists are per shard, so inspect the vehicle's owning worker.
+
 The service has one MQTT ingress process and eight independent vehicle-sharded PM2 workers. This package has been tested locally with mocked database connections and a Redis/Lua emulator; it has not been deployed to your broker, Redis, or MySQL cluster.
 
 ## 1. Files to configure and deploy

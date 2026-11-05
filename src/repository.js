@@ -16,8 +16,13 @@ const DETAILS_SELECT = `SELECT s.id, s.shipment_no AS trip_unique_id, s.shipment
  s.destination_lat, s.destination_lng, s.destination_radius_m / 1000.0 AS destination_radius,
  NULL AS time_duration, s.route_id
  FROM shipments s JOIN vehicles v ON v.id = s.vehicle_id`;
-const SELECT = `${DETAILS_SELECT}
- WHERE s.status IN ('DISPATCHED','IN_TRANSIT') AND s.trip_status IN (0,1)`;
+// GPS owns departure and arrival; planning, dispatch, delivery and cancellation
+// belong to the backend shipment workflow.
+const openTripWhere = (alias = '') => {
+  const p = alias ? `${alias}.` : '';
+  return `((${p}status='DISPATCHED' AND ${p}trip_status=0) OR (${p}status='IN_TRANSIT' AND ${p}trip_status=1))`;
+};
+const SELECT = `${DETAILS_SELECT} WHERE ${openTripWhere('s')}`;
 const START = `UPDATE shipments SET status='IN_TRANSIT', trip_status=1,
  trip_started_at=?, trip_completed_at=NULL,
  expected_completion_at=TIMESTAMPADD(MINUTE,(SELECT r.duration_minutes FROM shipment_routes r WHERE r.id=shipments.route_id),trip_started_at),
@@ -45,7 +50,7 @@ class Repository {
       const ids = rows.slice(i, i + 500).map(t => t.id);
       const states = await this.db.readExecute(`${DETAILS_SELECT}
         WHERE s.id IN (${ids.map(() => '?').join(',')})
-        AND s.status IN ('DISPATCHED','IN_TRANSIT') AND s.trip_status IN (0,1)`, ids, { primary: true });
+        AND ${openTripWhere('s')}`, ids, { primary: true });
       for (const state of states) current.set(String(state.id), state);
     }
     return rows.flatMap(row => {
@@ -69,11 +74,11 @@ class Repository {
       const targets = [...new Set((intent?.operations || []).map(o => o.trip_id))];
       const extra = targets.length ? ` OR id IN (${targets.map(() => '?').join(',')})` : '';
       await db.writeExecute(`SELECT id FROM shipments WHERE vehicle_id = ?
-        AND ((status IN ('DISPATCHED','IN_TRANSIT') AND trip_status IN (0,1))${extra})
+        AND (${openTripWhere()}${extra})
         ORDER BY id FOR UPDATE`, [vehicleId, ...targets]);
       const targetFilter = targets.length ? ` OR s.id IN (${targets.map(() => '?').join(',')})` : '';
       let rows = await db.writeExecute(`${DETAILS_SELECT} WHERE s.vehicle_id = ?
-        AND ((s.status IN ('DISPATCHED','IN_TRANSIT') AND s.trip_status IN (0,1))${targetFilter})
+        AND (${openTripWhere('s')}${targetFilter})
         ORDER BY s.id`, [vehicleId, ...targets]);
       if (!intent) {
         if (journal.archiveCoverage && !require('./archive-recovery').covers(journal.archiveCoverage, rows, cfg)) {
